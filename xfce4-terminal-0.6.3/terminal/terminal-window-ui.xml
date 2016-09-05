@@ -18,9 +18,7 @@
       <menuitem action="close-window"/>
     </menu>
     <menu action="edit-menu">
-      <menuitem action="copy"/>
       <menuitem action="paste"/>
-      <menuitem action="paste-selection"/>
       <separator/>
       <menuitem action="select-all"/>
       <separator/>
@@ -64,7 +62,6 @@
     <menuitem action="new-window"/>
     <menuitem action="new-tab"/>
     <separator/>
-    <menuitem action="copy"/>
     <menuitem action="paste"/>
     <separator/>
     <menuitem action="show-menubar"/>
@@ -94,7 +91,6 @@
     <toolitem action="new-tab"/>
     <toolitem action="new-window"/>
     <separator/>
-    <toolitem action="copy"/>
     <toolitem action="paste"/>
     <separator/>
     <toolitem action="search"/>

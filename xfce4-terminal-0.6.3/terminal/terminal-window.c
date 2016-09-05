@@ -83,6 +83,7 @@ static gboolean        terminal_window_accel_activate                (GtkAccelGr
                                                                       guint                   accel_key,
                                                                       GdkModifierType         accel_mods,
                                                                       TerminalWindow         *window);
+static void            terminal_window_selection_changed             (TerminalWindow         *window);
 static void            terminal_window_update_actions                (TerminalWindow         *window);
 static void            terminal_window_rebuild_tabs_menu             (TerminalWindow         *window);
 static void            terminal_window_notebook_page_switched        (GtkNotebook            *notebook,
@@ -138,11 +139,7 @@ static void            terminal_window_action_close_tab              (GtkAction 
                                                                       TerminalWindow         *window);
 static void            terminal_window_action_close_window           (GtkAction              *action,
                                                                       TerminalWindow         *window);
-static void            terminal_window_action_copy                   (GtkAction              *action,
-                                                                      TerminalWindow         *window);
 static void            terminal_window_action_paste                  (GtkAction              *action,
-                                                                      TerminalWindow         *window);
-static void            terminal_window_action_paste_selection        (GtkAction              *action,
                                                                       TerminalWindow         *window);
 static void            terminal_window_action_select_all             (GtkAction              *action,
                                                                       TerminalWindow         *window);
@@ -200,9 +197,7 @@ static const GtkActionEntry action_entries[] =
     { "close-tab", GTK_STOCK_CLOSE, N_ ("Close T_ab"), "<control><shift>w", NULL, G_CALLBACK (terminal_window_action_close_tab), },
     { "close-window", GTK_STOCK_QUIT, N_ ("Close _Window"), "<control><shift>q", NULL, G_CALLBACK (terminal_window_action_close_window), },
   { "edit-menu", NULL, N_ ("_Edit"), NULL, NULL, NULL, },
-    { "copy", GTK_STOCK_COPY, N_ ("_Copy"), "<control><shift>c", N_ ("Copy to clipboard"), G_CALLBACK (terminal_window_action_copy), },
-    { "paste", GTK_STOCK_PASTE, N_ ("_Paste"), "<control><shift>v", N_ ("Paste from clipboard"), G_CALLBACK (terminal_window_action_paste), },
-    { "paste-selection", NULL, N_ ("Paste _Selection"), NULL, NULL, G_CALLBACK (terminal_window_action_paste_selection), },
+    { "paste", GTK_STOCK_PASTE, N_ ("_Paste"), "<shift>Insert", N_ ("Paste from clipboard"), G_CALLBACK (terminal_window_action_paste), },
     { "select-all", GTK_STOCK_SELECT_ALL, N_ ("Select _All"), "<control><shift>a", NULL, G_CALLBACK (terminal_window_action_select_all), },
     { "preferences", GTK_STOCK_PREFERENCES, N_ ("Pr_eferences..."), NULL, N_ ("Open the preferences dialog"), G_CALLBACK (terminal_window_action_prefs), },
   { "view-menu", NULL, N_ ("_View"), NULL, NULL, NULL, },
@@ -375,7 +370,6 @@ terminal_window_init (TerminalWindow *window)
   window->action_next_tab = gtk_action_group_get_action (window->action_group, "next-tab");
   window->action_move_tab_left = gtk_action_group_get_action (window->action_group, "move-tab-left");
   window->action_move_tab_right = gtk_action_group_get_action (window->action_group, "move-tab-right");
-  window->action_copy = gtk_action_group_get_action (window->action_group, "copy");
   window->action_search_next = gtk_action_group_get_action (window->action_group, "search-next");
   window->action_search_prev = gtk_action_group_get_action (window->action_group, "search-prev");
   window->action_fullscreen = gtk_action_group_get_action (window->action_group, "fullscreen");
@@ -691,9 +685,6 @@ terminal_window_update_actions (TerminalWindow *window)
       gtk_action_set_sensitive (window->action_move_tab_left, n_pages > 1);
       gtk_action_set_sensitive (window->action_move_tab_right, n_pages > 1);
 
-      gtk_action_set_sensitive (window->action_copy,
-                                terminal_screen_has_selection (window->active));
-
       can_search = terminal_screen_search_has_gregex (window->active);
       gtk_action_set_sensitive (window->action_search_next, can_search);
       gtk_action_set_sensitive (window->action_search_prev, can_search);
@@ -705,7 +696,13 @@ terminal_window_update_actions (TerminalWindow *window)
     }
 }
 
-
+static void
+terminal_window_selection_changed (TerminalWindow *window)
+{
+    if (G_LIKELY (window->active != NULL)) {
+        terminal_screen_copy_clipboard (window->active);
+    }
+}
 
 static void
 terminal_window_rebuild_tabs_menu (TerminalWindow *window)
@@ -860,7 +857,7 @@ terminal_window_notebook_page_added (GtkNotebook    *notebook,
   g_signal_connect (G_OBJECT (screen), "notify::title",
       G_CALLBACK (terminal_window_notify_title), window);
   g_signal_connect_swapped (G_OBJECT (screen), "selection-changed",
-      G_CALLBACK (terminal_window_update_actions), window);
+      G_CALLBACK (terminal_window_selection_changed), window);
   g_signal_connect (G_OBJECT (screen), "drag-data-received",
       G_CALLBACK (terminal_window_notebook_drag_data_received), window);
 
@@ -1297,31 +1294,11 @@ terminal_window_action_close_window (GtkAction       *action,
 
 
 static void
-terminal_window_action_copy (GtkAction       *action,
-                             TerminalWindow  *window)
-{
-  if (G_LIKELY (window->active != NULL))
-    terminal_screen_copy_clipboard (window->active);
-}
-
-
-
-static void
 terminal_window_action_paste (GtkAction       *action,
                               TerminalWindow  *window)
 {
   if (G_LIKELY (window->active != NULL))
     terminal_screen_paste_clipboard (window->active);
-}
-
-
-
-static void
-terminal_window_action_paste_selection (GtkAction      *action,
-                                        TerminalWindow *window)
-{
-  if (G_LIKELY (window->active != NULL))
-    terminal_screen_paste_primary (window->active);
 }
 
 
