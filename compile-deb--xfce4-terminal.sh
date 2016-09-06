@@ -2,6 +2,7 @@
 
 if [ ! -f /.dockerenv ]; then
    echo "This script better to run in dockerized environment"
+   # TODO: mount /etc/apt into the container
    ~/docker/u16.sh $0
    exit
 fi
